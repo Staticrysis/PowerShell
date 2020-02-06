@@ -1,6 +1,37 @@
-﻿clear
+clear
+function GetColumnNames {param($Str)
+    ($str.Split([environment]::NewLine,[System.StringSplitOptions]::RemoveEmptyEntries))
+}
+
 function GetRuler{param($str)
-    [System.Int32[]]$RulerValues = $str.Split(","," ","`r","`n") | Where {[System.String]::IsNullOrWhiteSpace($_) -ne $true}
+#
+#$str = "1	24
+#25	31
+#32	51
+#52	52
+#53	59
+#60	66
+#67	74
+#75	104
+#105	106
+#107	107
+#108	124
+#125	139
+#140	154
+#155	231
+#232	234
+#235	264
+#265	294
+#295	314
+#315	316
+#317	327
+#328	347
+#"
+#/
+
+
+
+    [System.Int32[]]$RulerValues = $Str.Split((","," ","`r","`n","`t"),[System.StringSplitOptions]::RemoveEmptyEntries)
     #Converts 1d array too 2d array
     $RulerSets = [System.Collections.Generic.List[System.Int32[]]]::new()
     for ($i = 0; $i -lt $RulerValues.Length; $i++){if($i % 2 -eq 0){$RulerSets.Add(($RulerValues[$i],$RulerValues[$i+1]))}}
@@ -11,196 +42,67 @@ function CreateDataTable {
     param(
         [System.Windows.Forms.DataGridView]$DT,
         [System.Collections.Generic.List[System.Int32[]]]$RulerSets,
-        [System.String[][]]$Content,$ExtractionType=1
+        $Content,
+        [System.String[]]$ColumnNames,
+        [System.Int32]$ExtractionType=2
     )
 
     #$DT = [System.Windows.Forms.DataGridView]::new()
     #Create Data Table Columns
     for ($i = 0; $i -lt $RulerSets.Count; $i++)
     {
-        $DT.Columns.Add("Split $i","Split $i") | Out-Null
+        if($ColumnNames -eq $null -or [System.String]::IsNullOrWhiteSpace($ColumnNames[$i]))
+        {$DT.Columns.Add("Split $i","Split $i") | Out-Null}
+        else
+        {$DT.Columns.Add($ColumnNames[$i],$ColumnNames[$i]) | Out-Null}
     }
     
-    #Fixed Additive
+    #Fixed Additive = 1 
+    #Fixed End-to-End
     for ($r = 0; $r -lt $Content.Length; $r++)
     { 
-        $Col = for ($c = 0; $c -lt $RulerSets.Count; $c++)
+        $Col = for($c = 0; $c -lt $RulerSets.Count-1; $c++)
         { 
-       
-            $T = if($ExtractionType=1){($Rulersets[$c][0],$Rulersets[$c][1])}
-             elseif($ExtractionType=2){($Rulersets[$c][0],$Rulersets[$c][1]-$Rulersets[$c][0])}
-            $Content[$r].Substring($T[0],$T[1]) 
-            #$Content[$r].Substring($Rulersets[$c][0],$Rulersets[$c][1])
+            $T = if($ExtractionType -eq 1){($Rulersets[$c][0],$Rulersets[$c][1])}
+             elseif($ExtractionType -eq 2){($Rulersets[$c][0],($Rulersets[$c][1]-$Rulersets[$c][0]))}
+
+
+            if($Content[$r].Length -lt ($T[0]+$T[1]) -or [System.String]::IsNullOrWhiteSpace($Content[$r])) {""} else {$Content[$r].Substring($T[0]-1,$T[1])}
         }
-        $DT.rows.Add($Col) | Out-Null
+    
+        if($col -ne $null) {$DT.rows.Add($Col) | Out-Null}
     }
     
 
     $DT 
 }
 
+$FD = [System.Windows.Forms.OpenFileDialog]::new()
+#$FD.ShowDialog()
+#$Content = Get-Content $FD.FileName | Where {[System.String]::IsNullOrWhiteSpace($_) -ne $true}
 
-
-$TestStr = "0   ,1
-            11  ,4
-            15  ,2
-            17  ,4
-                  
-            21  ,5
-            26  ,1
-            27  ,1
-            28  ,1
-                  
-            29  ,5
-            34  ,1
-            35  ,1
-            36  ,1
-                  
-            37  ,5
-            42  ,1
-            43  ,1
-            44  ,1
-                  
-            45  ,5
-            50  ,1
-            51  ,1
-            52  ,1
-                  
-            53  ,5
-            58  ,1
-            59  ,1
-            60  ,1
-                  
-            61  ,5
-            66  ,1
-            67  ,1
-            68  ,1
-                  
-            69  ,5
-            74  ,1
-            75  ,1
-            76  ,1
-                  
-            77  ,5
-            82  ,1
-            83  ,1
-            84  ,1
-                  
-            85  ,5
-            90  ,1
-            91  ,1
-            92  ,1
-                  
-            93  ,5
-            98  ,1
-            99  ,1
-            100 ,1
-
-            101 ,5
-            106 ,1
-            107 ,1
-            108 ,1
-
-            109 ,5
-            114 ,1
-            115 ,1
-            116 ,1
-
-            117 ,5
-            122 ,1
-            123 ,1
-            124 ,1
-
-            125 ,5
-            130 ,1
-            131 ,1
-            132 ,1
-
-            133 ,5
-            138 ,1
-            139 ,1
-            140 ,1
-
-            141 ,5
-            146 ,1
-            147 ,1
-            148 ,1
-
-            149 ,5
-            154 ,1
-            155 ,1
-            156 ,1
-
-            157 ,5
-            162 ,1
-            163 ,1
-            164 ,1
-
-            165 ,5
-            170 ,1
-            171 ,1
-            172 ,1
-
-            173 ,5
-            178 ,1
-            179 ,1
-            180 ,1
-
-            181 ,5
-            186 ,1
-            187 ,1
-            188 ,1
-
-            189 ,5
-            194 ,1
-            195 ,1
-            196 ,1
-
-            197 ,5
-            202 ,1
-            203 ,1
-            204 ,1
-
-            205 ,5
-            210 ,1
-            211 ,1
-            212 ,1
-
-            213 ,5
-            218 ,1
-            229 ,1
-            220 ,1
-
-            221 ,5
-            226 ,1
-            227 ,1
-            228 ,1
-
-            229 ,5
-            234 ,1
-            235 ,1
-            236 ,1
-
-            237 ,5
-            242 ,1
-            243 ,1
-            244 ,1
-
-            245 ,5
-            250 ,1
-            251 ,1
-            252 ,1
-
-            253 ,5
-            258 ,1
-            259 ,1
-            260 ,1
-
-            261 ,5
-            266 ,1
-            267 ,1
-            268 ,1"
-
+#$ColumnNames = GetColumnNames   "
+#25	31
+#32	51
+#52	52
+#53	59
+#60	66
+#67	74
+#75	104
+#105	106
+#107	107
+#108	124
+#125	139
+#140	154
+#155	231
+#232	234
+#235	264
+#265	294
+#295	314
+#315	316
+#317	327
+#328	347
+#"
 
 
 
@@ -269,16 +171,28 @@ $button1.Size = [System.Drawing.Size]::new(100, 180);
 $button1.TabIndex = 0;
 $button1.Text = "Enter";
 $button1.UseVisualStyleBackColor = $true;
-$button1.Add_Click({
-    $textBox1.Text = "Test";  
+$button1.Add_Click({    
     $DT = [System.Windows.Forms.DataGridView]::new()
-    $RulerSets = GetRuler -str $textBox2.Text
+
+    $RulerSets   = GetRuler -str $textBox2.Text
+    $ColumnNames = GetColumnNames -Str $textBox1.Text
+    
+    do
+    {
+        $FD.ShowDialog()
+    }
+    while ($FD -match ".zip")
+
+    $Content = Get-Content $FD.FileName | Where {[System.String]::IsNullOrWhiteSpace($_) -ne $true}
+    #$TestStr = "1,$(($Content | Measure-Object -Maximum -Property Length).Maximum)"
+
     $textBox2.Text = for ($i = 0; $i -lt $RulerSets.Count; $i++)
                      { 
                          "`r`n$($RulerSets[$i][0]),$($RulerSets[$i][1])"
                          
                      }
-    $dataGridView1 = (CreateDataTable -RulerSets $RulerSets -Content $Content -DT $DT)
+    #TODO Content set to a sample size
+    $dataGridView1 = (CreateDataTable -RulerSets $RulerSets -Content $Content -ColumnNames $ColumnNames -DT $DT -ExtractionType 1)
     #$dataGridView1.Rows.Cells.Value
 
     $dataGridView1.BorderStyle = [System.Windows.Forms.BorderStyle]::None;
@@ -344,7 +258,8 @@ $form1.ClientSize = [System.Drawing.Size]::new(800, 450);
 $form1.Controls.Add($splitContainer1);
 $form1.Name = "Form1";
 $form1.Text = "Form1";
-$form1.ShowDialog()
+[System.windows.forms.application]::run($form1)
+
 
 
 
