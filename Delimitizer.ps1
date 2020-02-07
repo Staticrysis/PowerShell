@@ -1,60 +1,38 @@
+  
 clear
 function GetColumnNames {param($Str)
     ($str.Split([environment]::NewLine,[System.StringSplitOptions]::RemoveEmptyEntries))
 }
 
+
 function GetRuler{param($str)
-#
-#$str = "1	24
-#25	31
-#32	51
-#52	52
-#53	59
-#60	66
-#67	74
-#75	104
-#105	106
-#107	107
-#108	124
-#125	139
-#140	154
-#155	231
-#232	234
-#235	264
-#265	294
-#295	314
-#315	316
-#317	327
-#328	347
-#"
-#/
-
-
-
-    [System.Int32[]]$RulerValues = $Str.Split((","," ","`r","`n","`t"),[System.StringSplitOptions]::RemoveEmptyEntries)
+    [System.String[]]$RulerValues = $Str.Split((","," ","`r","`n","`t"),[System.StringSplitOptions]::RemoveEmptyEntries)
     #Converts 1d array too 2d array
-    $RulerSets = [System.Collections.Generic.List[System.Int32[]]]::new()
-    for ($i = 0; $i -lt $RulerValues.Length; $i++){if($i % 2 -eq 0){$RulerSets.Add(($RulerValues[$i],$RulerValues[$i+1]))}}
-    #for ($i = 0; $i -lt $RulerValues.Length; $i++){if($i % 2 -eq 0){$RulerSets[[System.Math]::Floor($i/2)][0]=$RulerValues[$i]}else{$RulerSets[[System.Math]::Floor($i/2)][1]=$RulerValues[$i]}}
+    $RulerSets = [System.Collections.Generic.List[Tuple[int,int,string]]]::new()
+    for ($i = 0; $i -lt $RulerValues.Length; $i++){if($i % 3 -eq 0) 
+    {$RulerSets.Add([System.Tuple[int,int,string]]::new($RulerValues[$i],$RulerValues[$i+1],$RulerValues[$i+2]))}}
     $RulerSets
 }
+ 
+
+
+
 function CreateDataTable {
     param(
         [System.Windows.Forms.DataGridView]$DT,
-        [System.Collections.Generic.List[System.Int32[]]]$RulerSets,
+        [System.Collections.Generic.List[Tuple[int,int,string]]]$RulerSets,
         $Content,
-        [System.String[]]$ColumnNames,
-        [System.Int32]$ExtractionType=2
+        [System.Int32]$ExtractionType=0
     )
 
     #$DT = [System.Windows.Forms.DataGridView]::new()
     #Create Data Table Columns
     for ($i = 0; $i -lt $RulerSets.Count; $i++)
     {
-        if($ColumnNames -eq $null -or [System.String]::IsNullOrWhiteSpace($ColumnNames[$i]))
+        if($RulerSets -eq $null -or [System.String]::IsNullOrWhiteSpace($RulerSets[$i].Item3))
         {$DT.Columns.Add("Split $i","Split $i") | Out-Null}
         else
-        {$DT.Columns.Add($ColumnNames[$i],$ColumnNames[$i]) | Out-Null}
+        {$DT.Columns.Add($RulerSets[$i].Item3,$RulerSets[$i].Item3) | Out-Null}
     }
     
     #Fixed Additive = 1 
@@ -63,11 +41,11 @@ function CreateDataTable {
     { 
         $Col = for($c = 0; $c -lt $RulerSets.Count-1; $c++)
         { 
-            $T = if($ExtractionType -eq 1){($Rulersets[$c][0],$Rulersets[$c][1])}
-             elseif($ExtractionType -eq 2){($Rulersets[$c][0],($Rulersets[$c][1]-$Rulersets[$c][0]))}
+            $T = if($ExtractionType -eq 0){($Rulersets[$c].Item1, $Rulersets[$c].Item2)}
+             elseif($ExtractionType -eq 1){($Rulersets[$c].Item1,($Rulersets[$c].Item2-$Rulersets[$c].Item1))}
 
 
-            if($Content[$r].Length -lt ($T[0]+$T[1]) -or [System.String]::IsNullOrWhiteSpace($Content[$r])) {""} else {$Content[$r].Substring($T[0]-1,$T[1])}
+            if($Content[$r].Length -lt ($T[0]+$T[1]) -or [System.String]::IsNullOrWhiteSpace($Content[$r])) {""} else {$Content[$r].Substring($T[0],$T[1])}
         }
     
         if($col -ne $null) {$DT.rows.Add($Col) | Out-Null}
@@ -81,28 +59,6 @@ $FD = [System.Windows.Forms.OpenFileDialog]::new()
 #$FD.ShowDialog()
 #$Content = Get-Content $FD.FileName | Where {[System.String]::IsNullOrWhiteSpace($_) -ne $true}
 
-#$ColumnNames = GetColumnNames   "
-#25	31
-#32	51
-#52	52
-#53	59
-#60	66
-#67	74
-#75	104
-#105	106
-#107	107
-#108	124
-#125	139
-#140	154
-#155	231
-#232	234
-#235	264
-#265	294
-#295	314
-#315	316
-#317	327
-#328	347
-#"
 
 
 
@@ -112,8 +68,10 @@ $DataGridView1 = [System.Windows.Forms.DataGridView]::new() # CreateDataTable -R
 $splitContainer2 = [System.Windows.Forms.SplitContainer]::new()
 $button1 = [System.Windows.Forms.Button]::new()
 $splitContainer3 = [System.Windows.Forms.SplitContainer]::new()
-$textBox1 = [System.Windows.Forms.TextBox]::new()
-$textBox2 = [System.Windows.Forms.TextBox]::new()
+$textBox1 = [System.Windows.Forms.RichTextBox]::new()
+$textBox2 = [System.Windows.Forms.RichTextBox]::new()
+$splitContainer4 = [System.Windows.Forms.SplitContainer]::new()
+$comboBox1 = [System.Windows.Forms.ComboBox]::new()
 
 
 # 
@@ -151,10 +109,6 @@ $splitContainer2.Dock = [System.Windows.Forms.DockStyle]::Fill;
 $splitContainer2.Location = [System.Drawing.Point]::new(0, 0);
 $splitContainer2.Name = "splitContainer2";
 # 
-# splitContainer2.Panel1
-# 
-$splitContainer2.Panel1.Controls.Add($button1);
-# 
 # splitContainer2.Panel2
 # 
 $splitContainer2.Panel2.Controls.Add($splitContainer3);
@@ -174,8 +128,8 @@ $button1.UseVisualStyleBackColor = $true;
 $button1.Add_Click({    
     $DT = [System.Windows.Forms.DataGridView]::new()
 
-    $RulerSets   = GetRuler -str $textBox2.Text
-    $ColumnNames = GetColumnNames -Str $textBox1.Text
+    $RulerSets   = GetRuler -str $textBox1.Text
+    
     
     do
     {
@@ -186,14 +140,16 @@ $button1.Add_Click({
     $Content = Get-Content $FD.FileName | Where {[System.String]::IsNullOrWhiteSpace($_) -ne $true}
     #$TestStr = "1,$(($Content | Measure-Object -Maximum -Property Length).Maximum)"
 
-    $textBox2.Text = for ($i = 0; $i -lt $RulerSets.Count; $i++)
+    $textBox1.Text = for ($i = 0; $i -lt $RulerSets.Count; $i++)
                      { 
-                         "`r`n$($RulerSets[$i][0]),$($RulerSets[$i][1])"
+                         "`r`n$($RulerSets[$i].Item1),$($RulerSets[$i].Item2),$($RulerSets[$i].Item3)"
                          
                      }
-    #TODO Content set to a sample size
-    $dataGridView1 = (CreateDataTable -RulerSets $RulerSets -Content $Content -ColumnNames $ColumnNames -DT $DT -ExtractionType 1)
-    #$dataGridView1.Rows.Cells.Value
+    $textBox2.Text = $Content | Out-String
+
+    
+    
+    $dataGridView1 = (CreateDataTable -RulerSets $RulerSets -Content $Content -DT $DT -ExtractionType $comboBox1.SelectedIndex)
 
     $dataGridView1.BorderStyle = [System.Windows.Forms.BorderStyle]::None;
     $dataGridView1.ColumnHeadersHeightSizeMode = [System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode]::AutoSize;
@@ -225,7 +181,7 @@ $splitContainer3.Panel1.Controls.Add($textBox1);
 # 
 $splitContainer3.Panel2.Controls.Add($textBox2);
 $splitContainer3.Size = [System.Drawing.Size]::new(696, 180);
-$splitContainer3.SplitterDistance = 320;
+$splitContainer3.SplitterDistance = 120;
 # 
 # textBox1
 # 
@@ -233,7 +189,7 @@ $textBox1.Dock = [System.Windows.Forms.DockStyle]::Fill;
 $textBox1.Location = [System.Drawing.Point]::new(0, 0);
 $textBox1.Multiline = $true;
 $textBox1.Name = "textBox1";
-$textBox1.Size = [System.Drawing.Size]::new(341, 180);
+$textBox1.Size = [System.Drawing.Size]::new(120, 180);
 $textBox1.WordWrap = $false
 $textBox1.ScrollBars = [System.Windows.Forms.ScrollBars]::Both
 $textBox1.TabIndex = 0;
@@ -244,11 +200,46 @@ $textBox2.Dock = [System.Windows.Forms.DockStyle]::Fill;
 $textBox2.Location = [System.Drawing.Point]::new(0, 0);
 $textBox2.Multiline = $true;
 $textBox2.Name = "textBox2";
-$textBox2.Size = [System.Drawing.Size]::new(341, 180);
+$textBox2.Size = [System.Drawing.Size]::new(572, 180);
 $textBox2.TabIndex = 1;
 $textBox2.WordWrap = $false
 $textBox2.ScrollBars = [System.Windows.Forms.ScrollBars]::Both
-$textBox2.Text =  $TestStr
+# 
+# splitContainer4
+# 
+$splitContainer4.Dock =[system.Windows.Forms.DockStyle]::Fill;
+$splitContainer4.Location = [System.Drawing.Point]::new(0, 0);
+$splitContainer4.Name = "splitContainer4";
+$splitContainer4.Orientation = [system.Windows.Forms.Orientation]::Horizontal;
+# 
+# splitContainer4.Panel1
+# 
+$splitContainer4.Panel1.Controls.Add($comboBox1);
+# 
+# splitContainer4.Panel2
+# 
+$splitContainer4.Panel2.Controls.Add($button1);
+$splitContainer4.Size = [System.Drawing.Size]::new(100, 180);
+$splitContainer4.SplitterDistance = 25;
+$splitContainer4.TabIndex = 0;
+$splitContainer4.IsSplitterFixed = $true;
+$splitContainer4.SplitterWidth = 1;
+$splitContainer4.Panel2.Anchor 
+# 
+# comboBox1
+# 
+$comboBox1.Dock = [system.Windows.Forms.DockStyle]::Fill;
+$comboBox1.FormattingEnabled = $true;
+$comboBox1.Location = [System.Drawing.Point]::new(0, 0);
+$comboBox1.Name = "comboBox1";
+$comboBox1.Size = [System.Drawing.Size]::new(100, 21);
+$comboBox1.TabIndex = 0;
+$comboBox1.Items.Add("Fixed Additive")
+$comboBox1.Items.Add("Fixed End-to-End")
+$comboBox1.SelectedIndex = 0
+
+$splitContainer2.Panel1.Controls.Add($splitContainer4)
+
 # 
 # Form1
 # 
@@ -259,12 +250,3 @@ $form1.Controls.Add($splitContainer1);
 $form1.Name = "Form1";
 $form1.Text = "Form1";
 [System.windows.forms.application]::run($form1)
-
-
-
-
-
-
-
-
-
